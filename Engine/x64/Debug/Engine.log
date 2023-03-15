@@ -1,45 +1,7 @@
-﻿  Debug.cpp
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Time.h(33,3): warning C4091: 'static ': ignored on left of 'Engine::Time' when no variable is declared
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Debug.cpp(334,14): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Debug.cpp(335,14): warning C4244: 'initializing': conversion from 'double' to 'int', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Debug.cpp(362,70): warning C4267: 'argument': conversion from 'size_t' to 'DWORD', possible loss of data
-  Input.cpp
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Time.h(33,3): warning C4091: 'static ': ignored on left of 'Engine::Time' when no variable is declared
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Input.h(68,3): warning C4091: 'static ': ignored on left of 'Engine::Input' when no variable is declared
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(67,101): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(67,59): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(74,44): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(74,28): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(106,24): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(106,17): warning C4244: 'argument': conversion from 'LONG' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(140,32): warning C4244: '=': conversion from 'LONG' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Input.cpp(141,32): warning C4244: '=': conversion from 'LONG' to 'float', possible loss of data
+﻿  Graphics.cpp
+C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\src\Graphics.cpp(162,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\src\Graphics.cpp(202,20): warning C4018: '<': signed/unsigned mismatch
+C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\src\Graphics.cpp(227,20): warning C4018: '<': signed/unsigned mismatch
   Main.cpp
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Time.h(33,3): warning C4091: 'static ': ignored on left of 'Engine::Time' when no variable is declared
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Input.h(68,3): warning C4091: 'static ': ignored on left of 'Engine::Input' when no variable is declared
-  Time.cpp
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Time.h(33,3): warning C4091: 'static ': ignored on left of 'Engine::Time' when no variable is declared
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Time.cpp(13,29): warning C4244: '=': conversion from 'ULONGLONG' to 'DWORD', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Time.cpp(20,28): warning C4244: '=': conversion from 'ULONGLONG' to 'DWORD', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Time.cpp(26,17): warning C4244: 'initializing': conversion from 'ULONGLONG' to 'DWORD', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Time.cpp(35,17): warning C4244: 'initializing': conversion from 'ULONGLONG' to 'DWORD', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Time.cpp(49,29): warning C4244: '=': conversion from 'ULONGLONG' to 'DWORD', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Time.cpp(55,17): warning C4244: 'initializing': conversion from 'ULONGLONG' to 'DWORD', possible loss of data
-  Vec2.cpp
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\types\Vec2.cpp(24,12): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\types\Vec2.cpp(25,12): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\types\Vec2.cpp(26,13): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-  Vec3.cpp
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\types\Vec3.cpp(34,12): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\types\Vec3.cpp(35,12): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\types\Vec3.cpp(36,12): warning C4244: '+=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\types\Vec3.cpp(37,13): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-  Window.cpp
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Time.h(33,3): warning C4091: 'static ': ignored on left of 'Engine::Time' when no variable is declared
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\include\Input.h(68,3): warning C4091: 'static ': ignored on left of 'Engine::Input' when no variable is declared
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Window.cpp(91,38): warning C4244: 'argument': conversion from 'LRESULT' to 'HRESULT', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Window.cpp(107,27): warning C4244: 'argument': conversion from 'WPARAM' to 'UINT', possible loss of data
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Window.cpp(112,27): warning C4244: 'argument': conversion from 'WPARAM' to 'UINT', possible loss of data
   Generating Code...
-C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\Engine\src\Window.cpp(41): warning C4715: 'Engine::Window::Start': not all control paths return a value
-  Engine.vcxproj -> C:\Users\Ryan Lambe\Documents\GitHub\RL-Voxel\x64\Debug\Engine.exe
+  Engine.vcxproj -> C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\x64\Debug\Engine.exe
