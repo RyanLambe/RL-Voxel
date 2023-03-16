@@ -24,23 +24,46 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPWSTR lpCmdLi
 	if (!renderer.Start(hwnd, width, height))
 		return -1;
 
+	//create camera
+	Engine::Camera cam;
+	renderer.setActiveCamera(&cam);
 
 	//run code
 	ExitCode code;
 	while (!(code = window.WindowClosed()).windowClosed) {
+		
+		//move the camera
+		Math::Vec3 move;
 		if (Input::getKey('W'))
-			renderer.camPos.z += 0.1f;
+			move.z += 0.1f;
 		if (Input::getKey('A'))
-			renderer.camPos.x -= 0.1f;
+			move.x -= 0.1f;
 		if (Input::getKey('S'))
-			renderer.camPos.z -= 0.1f;
+			move.z -= 0.1f;
 		if (Input::getKey('D'))
-			renderer.camPos.x += 0.1f;
+			move.x += 0.1f;
 		if (Input::getKey('Q'))
-			renderer.camPos.y += 0.1f;
+			move.y -= 0.1f;
 		if (Input::getKey('E'))
-			renderer.camPos.y -= 0.1f;
+			move.y += 0.1f;
 
+		cam.Translate(move);
+
+		//rotate the camera
+		Math::Vec3 rot;
+		if (Input::getKey('I'))
+			rot.x -= 0.5f;
+		if (Input::getKey('J'))
+			rot.y -= 0.5f;
+		if (Input::getKey('K'))
+			rot.x += 0.5f;
+		if (Input::getKey('L'))
+			rot.y += 0.5f;
+		if (Input::getKey('O'))
+			rot.z += 0.5f;
+		if (Input::getKey('U'))
+			rot.z -= 0.5f;
+		cam.Rotate(rot);
 
 		renderer.Draw();
 	}

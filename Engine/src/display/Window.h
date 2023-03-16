@@ -2,11 +2,11 @@
 
 #include <Windows.h> 
 
+#pragma comment(lib, "user32.lib")
+
 #include "Input.h"
 #include "Time.h"
 #include "Debug.h"
-
-#pragma comment(lib, "user32.lib")
 
 namespace Display {
 

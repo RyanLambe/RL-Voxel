@@ -1,2 +1,5 @@
 ﻿  Main.cpp
+  Camera.cpp
+  Renderer.cpp
+  Generating Code...
   Engine.vcxproj -> C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\bin\Debug\Engine.exe

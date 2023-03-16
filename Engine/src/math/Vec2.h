@@ -3,7 +3,7 @@
 #include <math.h>
 
 namespace Math {
-	class Vec2 {
+	struct Vec2 {
 	public:
 
 		//components

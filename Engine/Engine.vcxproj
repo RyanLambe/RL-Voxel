@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\graphics\Camera.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\graphics\Graphics.cpp" />
     <ClCompile Include="src\graphics\Renderer.cpp" />
@@ -171,6 +172,7 @@
     <ClCompile Include="src\display\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\graphics\Camera.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="include\Graphics.h" />
     <ClInclude Include="src\Graphics.h" />

@@ -46,6 +46,11 @@ Vec2 Graphics::getDimensions()
 
 bool Graphics::setDimensions(Vec2 dimensions)
 {
+	if (mainGraphics == nullptr) {
+		logError("Cannot Set Dimensions as there is no Graphics created.");
+		return false;
+	}
+
 	//save new dimensions
 	mainGraphics->dimensions = dimensions;
 
