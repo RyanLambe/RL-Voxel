@@ -1,5 +1,18 @@
-﻿  Main.cpp
+﻿C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\shaders\PixelShader.hlsl(34,26): warning X4000: use of potentially uninitialized variable (getVoxelNormal)
+C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\shaders\PixelShader.hlsl(36,2): warning X4000: use of potentially uninitialized variable (getVoxelNormal)
+  
+  compilation object save succeeded; see C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\bin\Debug\PixelShader.cso
+  compilation object save succeeded; see C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\bin\Debug\VertexShader.cso
   Camera.cpp
+  Engine.cpp
+  Graphics.cpp
   Renderer.cpp
+  Main.cpp
+  Vec2.cpp
+  Vec3.cpp
+  Debuger.cpp
+  Input.cpp
+  Time.cpp
+  Window.cpp
   Generating Code...
   Engine.vcxproj -> C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\bin\Debug\Engine.exe

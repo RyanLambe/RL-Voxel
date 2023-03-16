@@ -16,7 +16,37 @@ struct Ray {
 	float3 direction;
 };
 
-bool VoxelRayIntersection(float3 voxelPos, Ray ray, out float hitDistance) {
+struct IntersectionInfo {
+	float distance;
+	float3 hitPoint;
+	float3 surfaceNormal;
+};
+
+float3 getVoxelNormal(float3 voxelPos, float3 hitPoint) {
+	
+	float3 voxelNormal = hitPoint - voxelPos;
+	float3 absVoxelNormal = abs(voxelNormal);
+	
+	float maxDir = max(absVoxelNormal.x, max(absVoxelNormal.y, absVoxelNormal.z));
+
+	if (absVoxelNormal.x == maxDir) {
+		if (voxelNormal.x > 0)
+			return float3(1, 0, 0);
+		return float3(-1, 0, 0);
+	}
+
+	if (absVoxelNormal.y == maxDir) {
+		if (voxelNormal.y > 0)
+			return float3(0, 1, 0);
+		return float3(0, -1, 0);
+	}
+
+	if (voxelNormal.z > 0)
+		return float3(0, 0, 1);
+	return float3(0, 0, -1);
+}
+
+bool VoxelRayIntersection(float3 voxelPos, Ray ray, out IntersectionInfo info) {
 	
 	float3 voxelMin = (voxelPos * VOXEL_SCALE) - (VOXEL_SCALE / 2.0);
 	float3 voxelMax = (voxelPos * VOXEL_SCALE) + (VOXEL_SCALE / 2.0);
@@ -30,7 +60,10 @@ bool VoxelRayIntersection(float3 voxelPos, Ray ray, out float hitDistance) {
 	float t1 = max(tmin.x, max(tmin.y, tmin.z));
 	float t2 = min(tmax.x, min(tmax.y, tmax.z));
 
-	hitDistance = t1;
+	info.distance = t1;
+	info.hitPoint = ray.origin + ray.direction * t1;
+	info.surfaceNormal = getVoxelNormal(voxelPos, info.hitPoint);
+
 	return t1 >= 0 && t1 <= t2;
 }
 
@@ -46,7 +79,7 @@ float3 getRayDirection(float2 screenPos) {
 	correctedScreenPos *= float2(screenData.x / screenData.y, -1); 
 
 	//rotate ray direction
-	return mul(rotation, float4(correctedScreenPos, 1, 0)).xyz;
+	return normalize(mul(rotation, float4(correctedScreenPos, 1, 0)).xyz);
 }
 
 float4 main(float4 pos : SV_POSITION) : SV_TARGET
@@ -78,14 +111,15 @@ float4 main(float4 pos : SV_POSITION) : SV_TARGET
 
 
 	//raytrace
-	float minDistance = INF;
+	IntersectionInfo minDistance;
+	minDistance.distance = INF;
 	int minIndex = -1;
 	for (int i = 0; i < voxelCount; i++) {
-		float distance;
-		if (VoxelRayIntersection(voxels[i].xyz, ray, distance)) {
+		IntersectionInfo info;
+		if (VoxelRayIntersection(voxels[i].xyz, ray, info)) {
 
-			if (distance < minDistance) {
-				minDistance = distance;
+			if (info.distance < minDistance.distance) {
+				minDistance = info;
 				minIndex = i;
 			}
 
@@ -94,7 +128,12 @@ float4 main(float4 pos : SV_POSITION) : SV_TARGET
 	}
 
 	if (minIndex != -1) {
-		return materials[(int)voxels[minIndex].w];
+		
+		float4 albedo = materials[(int)voxels[minIndex].w];
+		
+		//return float4(minDistance.surfaceNormal, 1);
+
+		return albedo * max(dot(minDistance.surfaceNormal, normalize(float3(0.5f, 1, -0.75f))), 0.1f);
 	}
 
 	return float4(0, 0, 0, 1);

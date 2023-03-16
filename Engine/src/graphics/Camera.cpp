@@ -8,7 +8,6 @@ Camera::CameraBufferData* Camera::getBufferData()
 	//position
 	lastBuffer.position = DirectX::XMVectorSet(position.x, position.y, position.z, 0.0f);
 
-	log(foreward());
 	//rotation
 	lastBuffer.rotation = DirectX::XMMatrixRotationRollPitchYaw(rotation.x * PI / 180.0f, rotation.y * PI / 180.0f, rotation.z * PI / 180.0f);
 
