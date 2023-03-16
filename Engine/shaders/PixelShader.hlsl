@@ -1,5 +1,8 @@
 #define VOXEL_SCALE 1
-#define MAX_VOXELS 256
+#define MAX_VOXELS 1000
+#define MAX_MATERIALS 10
+
+#define RAY_BOUNCES 4
 
 #define INF 1e+30
 #define PI 3.14159f
@@ -11,15 +14,26 @@ cbuffer CameraBuffer : register(b0) {
 	float3 screenData;//x: width, y: height, z: fov
 }
 
+cbuffer WorldBuffer : register(b2) {
+
+	float4 voxels[MAX_VOXELS];
+
+	struct Material {
+		float3 albedo;
+
+	} materials[MAX_MATERIALS];
+}
+
 struct Ray {
 	float3 origin;
 	float3 direction;
 };
 
-struct IntersectionInfo {
+struct HitInfo {
 	float distance;
 	float3 hitPoint;
 	float3 surfaceNormal;
+	int materialIndex;
 };
 
 float3 getVoxelNormal(float3 voxelPos, float3 hitPoint) {
@@ -46,7 +60,7 @@ float3 getVoxelNormal(float3 voxelPos, float3 hitPoint) {
 	return float3(0, 0, -1);
 }
 
-bool VoxelRayIntersection(float3 voxelPos, Ray ray, out IntersectionInfo info) {
+bool VoxelRayIntersection(float3 voxelPos, Ray ray, out HitInfo info) {
 	
 	float3 voxelMin = (voxelPos * VOXEL_SCALE) - (VOXEL_SCALE / 2.0);
 	float3 voxelMax = (voxelPos * VOXEL_SCALE) + (VOXEL_SCALE / 2.0);
@@ -63,6 +77,7 @@ bool VoxelRayIntersection(float3 voxelPos, Ray ray, out IntersectionInfo info) {
 	info.distance = t1;
 	info.hitPoint = ray.origin + ray.direction * t1;
 	info.surfaceNormal = getVoxelNormal(voxelPos, info.hitPoint);
+	info.materialIndex = -1;
 
 	return t1 >= 0 && t1 <= t2;
 }
@@ -82,6 +97,28 @@ float3 getRayDirection(float2 screenPos) {
 	return normalize(mul(rotation, float4(correctedScreenPos, 1, 0)).xyz);
 }
 
+HitInfo traceRay(Ray ray, int voxelCount, float4 voxels[MAX_VOXELS]) {
+	
+	HitInfo closestHit;
+	closestHit.distance = INF;
+	closestHit.materialIndex = -1;
+
+	for (int i = 0; i < voxelCount; i++) {
+
+		HitInfo hit;
+		if (VoxelRayIntersection(voxels[i].xyz, ray, hit)) {
+
+			if (hit.distance < closestHit.distance) {
+				closestHit = hit;
+				closestHit.materialIndex = voxels[i].w;
+			}
+
+		}
+
+	}
+	return closestHit;
+}
+
 float4 main(float4 pos : SV_POSITION) : SV_TARGET
 {
 	//voxels
@@ -89,20 +126,22 @@ float4 main(float4 pos : SV_POSITION) : SV_TARGET
 	float4 voxels[MAX_VOXELS];
 	voxels[0] = float4(0, 0, 0, 0);//cube at x:0, y:0, z:0, material:0
 	voxels[1] = float4(1, 0, 1, 0);
-	voxels[2] = float4(2, 0, 0, 0);
+	voxels[2] = float4(2, 0, 1, 0);
 	voxels[3] = float4(3, 0, 0, 1);
 	voxels[4] = float4(4, 0, 0, 1);
 	voxels[5] = float4(1, -1, 0, 1);
 	voxels[6] = float4(2, -1, 0, 2);
-	voxels[7] = float4(3, -1, 0, 2);
-	voxels[8] = float4(4, -1, 0, 2);
-	voxels[9] = float4(2, -2, 0, 2);
+	voxels[7] = float4(3, -1, -1, 2);
+	voxels[8] = float4(4, -1, -1, 2);
+	voxels[9] = float4(2, -2, -1, 2);
 
 	float4 materials[3];
 	materials[0] = float4(1, 0, 0, 1);
 	materials[1] = float4(0, 1, 0, 1);
 	materials[2] = float4(0, 0, 1, 1);
 
+	//light 
+	float3 lightDir = normalize(float3(-0.5f, 1, -0.75f));
 
 	//camera
 	Ray ray;
@@ -111,31 +150,28 @@ float4 main(float4 pos : SV_POSITION) : SV_TARGET
 
 
 	//raytrace
-	IntersectionInfo minDistance;
-	minDistance.distance = INF;
-	int minIndex = -1;
-	for (int i = 0; i < voxelCount; i++) {
-		IntersectionInfo info;
-		if (VoxelRayIntersection(voxels[i].xyz, ray, info)) {
+	HitInfo hits[RAY_BOUNCES];
+	for (int i = 0; i < RAY_BOUNCES; i++) {
+		hits[i] = traceRay(ray, voxelCount, voxels);
 
-			if (info.distance < minDistance.distance) {
-				minDistance = info;
-				minIndex = i;
-			}
-
-		}
-
+		//adjust ray direction
+		ray.origin = hits[i].hitPoint;
+		ray.direction = reflect(ray.direction, hits[i].surfaceNormal);
 	}
 
-	if (minIndex != -1) {
-		
-		float4 albedo = materials[(int)voxels[minIndex].w];
-		
-		//return float4(minDistance.surfaceNormal, 1);
+	float4 albedo = float4(0, 0, 0, 1);
+	
+	for (int i = 0; i < RAY_BOUNCES; i++) {
+		if (hits[i].materialIndex == -1)
+			break;
 
-		return albedo * max(dot(minDistance.surfaceNormal, normalize(float3(0.5f, 1, -0.75f))), 0.1f);
+		albedo += (materials[hits[i].materialIndex] * dot(hits[i].surfaceNormal, lightDir)) / ((i + 1) * (i + 1));
 	}
 
-	return float4(0, 0, 0, 1);
+	if (hits[0].materialIndex != -1) {
+		return albedo;
+	}
+
+	return float4(0.4f, 0.84f, 0.9f, 1);
 
 }
