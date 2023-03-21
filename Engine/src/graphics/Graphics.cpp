@@ -1,239 +1,122 @@
 #include "Graphics.h"
 
-using namespace Engine;
-using namespace Math;
-
-Vec2 Graphics::dimensions = Vec2(0);
-Graphics* Graphics::mainGraphics = nullptr;
-
-bool Graphics::Start(HWND hwnd, int width, int height)
+bool Engine::Graphics::Start()
 {
-	if (mainGraphics != nullptr) {
-		logError("Graphics have already been started.");
-		return false;
-	}
-	mainGraphics = this;
-	this->hwnd = hwnd;
-
-	return setupPipeline(hwnd, width, height);
+    SetupScreenRect();
+    if (!SetupShaders())
+        return false;
+    return true;
 }
 
-bool Graphics::EndFrame()
+unsigned int Engine::Graphics::GetShaderProgram()
 {
-	HRESULT hr;
-	if (FAILED(hr = swap->Present(1, 0))) {
-
-		if (hr == DXGI_ERROR_DEVICE_REMOVED) {
-			logErrorCode(device->GetDeviceRemovedReason());
-			return false;
-		}
-		else {
-			logErrorCode(hr);
-			return false;
-		}
-	}
-
-	float bgColour[4] = { 1, 155.0f / 255.0f, 0, 1 };
-	context->ClearRenderTargetView(target.Get(), bgColour);
-
-	return true;
+    return shaderProgram;
 }
 
-Vec2 Graphics::getDimensions()
+void Engine::Graphics::SetupScreenRect()
 {
-	return dimensions;
+    //vertex array object
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+
+    //vertex buffer
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    //vertex atributes
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 }
 
-bool Graphics::setDimensions(Vec2 dimensions)
+bool Engine::Graphics::SetupShaders()
 {
-	if (mainGraphics == nullptr) {
-		logError("Cannot Set Dimensions as there is no Graphics created.");
-		return false;
-	}
+    //read shaders from file
+    ReadShader("../Engine/shaders/VertexShader.glsl", &vertexShaderSource);
+    ReadShader("../Engine/shaders/FragmentShader.glsl", &fragmentShaderSource);
+    const char* vertexShaderCode = vertexShaderSource.c_str();
+    const char* fragmentShaderCode = fragmentShaderSource.c_str();
 
-	//save new dimensions
-	mainGraphics->dimensions = dimensions;
+    //vertex shader
+    unsigned int vertexShader;
+    vertexShader = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader, 1, &vertexShaderCode, NULL);
+    glCompileShader(vertexShader);
 
-	//resize target
-	DXGI_MODE_DESC dxgiDesc = {};
-	dxgiDesc.Width = (UINT)dimensions.x;
-	dxgiDesc.Height = (UINT)dimensions.y;
-	dxgiDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	dxgiDesc.RefreshRate.Numerator = 1000;
-	dxgiDesc.RefreshRate.Denominator = 1;
-	dxgiDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	dxgiDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+    int  success;
+    glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
 
-	HRESULT hr = mainGraphics->swap->ResizeTarget(&dxgiDesc);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
+        std::cout << "Could not create vertex shader:\n";
+        std::cout << infoLog << "\n";
 
-	//set target to new scaled target
-	mainGraphics->context->OMSetRenderTargets(1, mainGraphics->target.GetAddressOf(), nullptr);
-	return true;
+        return false;
+    }
+
+
+    //fragment shader
+    unsigned int fragmentShader;
+    fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fragmentShader, 1, &fragmentShaderCode, NULL);
+    glCompileShader(fragmentShader);
+
+    glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+
+        std::cout << "Could not create fragment shader:\n";
+        std::cout << infoLog << "\n";
+
+        return false;
+    }
+
+
+    //shader program
+    shaderProgram = glCreateProgram();
+    glAttachShader(shaderProgram, vertexShader);
+    glAttachShader(shaderProgram, fragmentShader);
+    glLinkProgram(shaderProgram);
+
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+
+        std::cout << "Could not create shader program:\n";
+        std::cout << infoLog << "\n";
+
+        return false;
+    }
+
+    glUseProgram(shaderProgram);
+
+    //cleanup
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
+
+    return true;
 }
 
-bool Graphics::setFullscreen(bool fullscreen)
+bool Engine::Graphics::ReadShader(std::string filename, std::string* shaderLocation)
 {
-	if (fullscreen) {
-		mainGraphics->windowedDimensions = getDimensions();
+    try {
+        std::ifstream file;
+        file.open(filename.c_str());
 
-		HMONITOR hMonitor = MonitorFromWindow(mainGraphics->hwnd, MONITOR_DEFAULTTONEAREST);
-		MONITORINFO monitorInfo;
-		monitorInfo.cbSize = sizeof(MONITORINFO);
-		if (!GetMonitorInfo(hMonitor, &monitorInfo))
-			return false;
+        std::stringstream stream;
+        stream << file.rdbuf();
+        file.close();
 
-		HRESULT hr = mainGraphics->swap->SetFullscreenState(true, nullptr);
-		logErrorCode(hr);
-		if (FAILED(hr))
-			return false;
-
-		return setDimensions(Vec2((float)(monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.left), (float)(monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.top)));
-	}
-	else {
-		HRESULT hr = mainGraphics->swap->SetFullscreenState(false, nullptr);
-		logErrorCode(hr);
-		if (FAILED(hr))
-			return false;
-
-		return setDimensions(mainGraphics->windowedDimensions);
-	}
-}
-
-bool Engine::Graphics::setupPipeline(HWND hwnd, int width, int height)
-{
-	//setup data for swap chain
-	DXGI_SWAP_CHAIN_DESC sd = {};
-	sd.BufferDesc.Width = width;
-	sd.BufferDesc.Height = height;
-	sd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	sd.BufferDesc.RefreshRate.Numerator = 1000;
-	sd.BufferDesc.RefreshRate.Denominator = 1;
-	sd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	sd.SampleDesc.Count = 1;
-	sd.SampleDesc.Quality = 0;
-	sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	sd.BufferCount = 1;
-	sd.OutputWindow = hwnd;
-	sd.Windowed = TRUE;
-	sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-
-	UINT swapCreateFlags = 0u;
-	swapCreateFlags |= D3D11_CREATE_DEVICE_DEBUG;
-
-
-	//create device, context and swapchain
-	HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, swapCreateFlags, nullptr, 0, D3D11_SDK_VERSION, &sd, &swap, &device, nullptr, &context);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-
-	// get frame buffer to create render target
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> frameBuffer;
-	hr = swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void**)&frameBuffer);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-
-	//create render target
-	hr = device->CreateRenderTargetView(frameBuffer.Get(), 0, &target);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-
-	//set size of window
-	windowedDimensions = Vec2((float)width, (float)height);
-	setDimensions(windowedDimensions);
-
-
-	//set viewport size
-	D3D11_VIEWPORT vp;
-	vp.Width = (FLOAT)width;
-	vp.Height = (FLOAT)height;
-	vp.MinDepth = 0;
-	vp.MaxDepth = 1;
-	vp.TopLeftX = 0;
-	vp.TopLeftY = 0;
-	context->RSSetViewports(1, &vp);
-
-
-	//set topology
-	context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-
-	//setup shader then return
-	return setupShaders();
-}
-
-bool Engine::Graphics::setupShaders()
-{
-	//setup com pointers
-	Microsoft::WRL::ComPtr<ID3D11VertexShader> vertexShader;
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout> inputLayout;
-	Microsoft::WRL::ComPtr<ID3DBlob> blob;
-
-	HRESULT hr;
-
-
-	//pixel shader
-	hr = D3DReadFileToBlob(L"../bin/Debug/PixelShader.cso", &blob);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-	hr = device->CreatePixelShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &pixelShader);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-	context->PSSetShader(pixelShader.Get(), 0, 0);
-
-
-
-	//vertex shader
-	hr = D3DReadFileToBlob(L"../bin/Debug/VertexShader.cso", &blob);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-	hr = device->CreateVertexShader(blob->GetBufferPointer(), blob->GetBufferSize(), nullptr, &vertexShader);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-	context->VSSetShader(vertexShader.Get(), 0, 0);
-
-
-
-	//input Layout
-	D3D11_INPUT_ELEMENT_DESC ied[] = {
-		{"Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}
-	};
-
-	hr = device->CreateInputLayout(ied, sizeof(ied) / sizeof(D3D11_INPUT_ELEMENT_DESC), blob->GetBufferPointer(), blob->GetBufferSize(), &inputLayout);
-	logErrorCode(hr);
-	if (FAILED(hr))
-		return false;
-
-	context->IASetInputLayout(inputLayout.Get());
-
-	return true;
-}
-
-ID3D11Device* Engine::Graphics::getDevice()
-{
-	return device.Get();
-}
-
-ID3D11DeviceContext* Engine::Graphics::getContext()
-{
-	return context.Get();
+        *shaderLocation = stream.str();
+    }
+    catch (...) {
+        std::cout << "Could not read shader: \"" << filename << "\"\n";
+        return false;
+    }
+    return true;
 }

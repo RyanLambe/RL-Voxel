@@ -1,6 +1,6 @@
 # RL-Voxel
 
-This will be a Realtime Voxel Rendering Engine using Direct X. 
+This will be a Realtime Voxel Rendering Engine using OpenGL. 
 
 
 ## Goals:

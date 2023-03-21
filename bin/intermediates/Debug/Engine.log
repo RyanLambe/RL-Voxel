@@ -1,6 +1,6 @@
-﻿C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\shaders\PixelShader.hlsl(164,11): warning X3078: 'i': loop control variable conflicts with a previous declaration in the outer scope; most recent declaration will be used
-C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\shaders\PixelShader.hlsl(48,26): warning X4000: use of potentially uninitialized variable (getVoxelNormal)
-C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\Engine\shaders\PixelShader.hlsl(50,2): warning X4000: use of potentially uninitialized variable (getVoxelNormal)
-  
-  compilation object save succeeded; see C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\bin\Debug\PixelShader.cso
-  Engine.vcxproj -> C:\Users\Ryan Lambe\source\repos\RyanLambe\RL-Voxel\bin\Debug\Engine.exe
+﻿  Main.cpp
+  Camera.cpp
+  Renderer.cpp
+  Generating Code...
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
+  Engine.vcxproj -> C:\Users\ryani\source\repos\RyanLambe\RL-Voxel\bin\Debug\Engine.exe

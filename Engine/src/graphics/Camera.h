@@ -1,48 +1,49 @@
 #pragma once
 
-#include <directxmath.h>
+#define PI 3.14159265389f
 
-#include "Graphics.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
-#define PI 3.14159f
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
+
+#include <iostream>
+#include <string>
 
 namespace Engine {
 	class Camera
 	{
 	public:
 
-		//transform values
-		Math::Vec3 position = Math::Vec3(0, 0, -5);
-		Math::Vec3 rotation = Math::Vec3(0, 0, 0);
+		//transformation values
+		
+		glm::vec3 position = glm::vec3(0, 0, -5);
+		glm::vec3 rotation = glm::vec3(0, 0, 0);
 
 		//directions
-		Math::Vec3 foreward();
-		Math::Vec3 right();
-		Math::Vec3 up();
+		glm::vec3 foreward();
+		glm::vec3 right();
+		glm::vec3 up();
 
 		//offset values
-		void Translate(Math::Vec3 offset);
+		void Translate(glm::vec3 offset);
 		void Translate(float x, float y, float z);
 
-		void Rotate(Math::Vec3 offset);
+		void Rotate(glm::vec3 offset);
 		void Rotate(float x, float y, float z);
 
 		//properties
 		float fov = 60;
 
-		//constant buffer data
-		struct CameraBufferData {
-			DirectX::XMVECTOR position;
-			DirectX::XMMATRIX rotation;
-
-			DirectX::XMVECTOR screenData;
-		};
-		CameraBufferData* getBufferData();
+		//open gl
+		void UpdateUniformVariables(unsigned int shaderProgram, glm::vec2 screenScale);
 
 	private:
-		CameraBufferData lastBuffer;
+
+		void SetRotationMatrix();
+		glm::mat4 rotationMat;
 
 	};
 }
-
-

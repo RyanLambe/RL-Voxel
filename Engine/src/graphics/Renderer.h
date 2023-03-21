@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Window.h"
 #include "Graphics.h"
 #include "Camera.h"
 
@@ -7,45 +8,23 @@ namespace Engine {
 	class Renderer
 	{
 	public:
-		bool Start(HWND hwnd, int width, int height);
-		void Draw();
 
-		void setActiveCamera(Camera* newCam);
+		bool Start(std::string windowName, int width, int height);
+		bool Render();
+
+		void SetActiveCamera(Camera* newCam);
+
+		GLFWwindow* GetWindow();
 
 	private:
 
-		//draws plane covering the screen allowing pixel shader to raytrace each pixel
-		bool updateScreenPlane();
+		Window window;
+		Graphics graphics;
 
-		//update constant buffers
-		bool updateCameraBuffer();
-		bool updateLightBuffer();
-		bool updateWorldBuffer();
+		glm::vec2 screenScale;
 
 
-		//graphics
-		Engine::Graphics graphics;
+		Camera* camera;
 
-
-		//buffer data
-		Camera* activeCamera = nullptr;
-		//LightManager* activeLightManager = nullptr;
-		//World* activeWorld = nullptr;
-
-
-		//buffers
-		Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
-		Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
-		bool setScreenPlane = false;
-
-		Microsoft::WRL::ComPtr<ID3D11Buffer> cameraBuffer;
-		bool cameraBufferCreated = false;
-
-		Microsoft::WRL::ComPtr<ID3D11Buffer> lightBuffer;
-		bool lightBufferCreated = false;
-
-		Microsoft::WRL::ComPtr<ID3D11Buffer> worldBuffer;
-		bool worldBufferCreated = false;
 	};
 }
-

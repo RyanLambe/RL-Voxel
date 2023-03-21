@@ -1,53 +1,43 @@
 #pragma once
 
-#include <d3d11.h>
-#include <d3dcompiler.h>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
 
-#pragma comment(lib, "d3d11.lib")
-#pragma comment(lib, "D3DCompiler.lib")
-
-#include <wrl.h>
-#include <vector>
-
-#include "../display/Debug.h"
-#include "../math/Vec2.h"
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <sstream>
 
 namespace Engine {
 	class Graphics
 	{
 	public:
 
-		// Run Graphics
-		bool Start(HWND hwnd, int width, int height);
-		bool EndFrame();
+		bool Start();
 
-		// Window Management
-		static Math::Vec2 getDimensions();
-		static bool setDimensions(Math::Vec2 dimensions);
-		static bool setFullscreen(bool fullscreen);
-
-		// Use DirectX functions
-		ID3D11Device* getDevice();
-		ID3D11DeviceContext* getContext();
+		unsigned int GetShaderProgram();
 
 	private:
 
-		bool setupPipeline(HWND hwnd, int width, int height);
-		bool setupShaders();
+		void SetupScreenRect();
+		bool SetupShaders();
 
-		// Instances
-		static Graphics* mainGraphics;
-		HWND hwnd;
+		// Screen Rect
+		float vertices[12] = {
+			-1, -1,
+			 1, -1,
+			-1,  1,
 
-		// Dimensions
-		static Math::Vec2 dimensions;
-		Math::Vec2 windowedDimensions;
+			 1,  1,
+			-1,  1,
+			 1, -1
+		};
 
-		// DirectX
-		Microsoft::WRL::ComPtr<IDXGISwapChain> swap = Microsoft::WRL::ComPtr<IDXGISwapChain>();
-		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> target = Microsoft::WRL::ComPtr<ID3D11RenderTargetView>();
+		// Shaders
+		unsigned int shaderProgram;
+		std::string vertexShaderSource;
+		std::string fragmentShaderSource;
 
-		Microsoft::WRL::ComPtr<ID3D11DeviceContext> context = Microsoft::WRL::ComPtr<ID3D11DeviceContext>();
-		Microsoft::WRL::ComPtr<ID3D11Device> device = Microsoft::WRL::ComPtr<ID3D11Device>();
+		bool ReadShader(std::string filename, std::string* shaderLocation);
 	};
 }
