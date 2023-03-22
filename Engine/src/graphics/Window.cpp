@@ -2,12 +2,19 @@
 
 using namespace Engine;
 
+GLFWwindow* Window::window = nullptr;
+
 Engine::Window::~Window() {
     glfwTerminate();
 }
 
-bool Engine::Window::Start(std::string name, int width, int height)
+bool Engine::Window::Start(std::string name, int width, int height, GLFWframebuffersizefun ResizeCallback)
 {
+    if (window) {
+        std::cout << "A window has already been created.\n";
+        return false;
+    }
+
     //start glfw
     if (!glfwInit()) {
         std::cout << "Could not innitialize GLFW.\n";
@@ -27,6 +34,9 @@ bool Engine::Window::Start(std::string name, int width, int height)
         return false;
     }
     glfwMakeContextCurrent(window);
+
+    //unlock framerate
+    //glfwSwapInterval(0);
 
     //start glad
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
@@ -48,13 +58,6 @@ bool Engine::Window::Run()
 
     if (!glfwWindowShouldClose(window))
     {
-        //render
-        glClearColor(1, 0.6f, 0, 1);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        
-        //next frame
         glfwSwapBuffers(window);
         glfwPollEvents();
 
@@ -66,10 +69,4 @@ bool Engine::Window::Run()
 
 GLFWwindow* Engine::Window::GetWindow() {
     return window;
-}
-
-//callback functions
-void Engine::Window::ResizeCallback(GLFWwindow* window, int width, int height)
-{
-    glViewport(0, 0, width, height);
 }

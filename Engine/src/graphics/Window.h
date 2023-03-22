@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 
 #include <string>
 #include <fstream>
@@ -14,18 +15,14 @@ namespace Engine {
 
 		~Window();
 
-		bool Start(std::string name, int width, int height);
+		bool Start(std::string name, int width, int height, GLFWframebuffersizefun ResizeCallback);
 		bool Run();
 		
-		GLFWwindow* GetWindow();
+		static GLFWwindow* GetWindow();
 		
 	private:
 
-		GLFWwindow* window = nullptr;
-		
-
-		//window callbacks
-		static void ResizeCallback(GLFWwindow* window, int width, int height);
+		static GLFWwindow* window;
 	};
 }
 

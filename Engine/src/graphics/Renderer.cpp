@@ -1,16 +1,22 @@
 #include "Renderer.h"
 
+using namespace Engine;
+
+Camera* Renderer::camera = nullptr;
+
 bool Engine::Renderer::Start(std::string windowName, int width, int height)
 {
-    screenScale = glm::vec2(width, height);
-    if (!window.Start(windowName, width, height))
+    if (!window.Start(windowName, width, height, ResizeCallback))
         return false;
+
+    windowSize = glm::vec2(width, height);
     return graphics.Start();
 }
 
 bool Engine::Renderer::Render()
 {
-    camera->UpdateUniformVariables(graphics.GetShaderProgram(), screenScale);
+    camera->UpdateUniformVariables(graphics.GetShaderProgram());
+    camera->Render(graphics.GetShaderProgram());
 
     return window.Run();
 }
@@ -18,9 +24,12 @@ bool Engine::Renderer::Render()
 void Engine::Renderer::SetActiveCamera(Camera* newCam)
 {
     camera = newCam;
+    camera->Enable(windowSize);
 }
 
-GLFWwindow* Engine::Renderer::GetWindow()
+void Engine::Renderer::ResizeCallback(GLFWwindow* window, int width, int height)
 {
-    return window.GetWindow();
+    glViewport(0, 0, width, height);
+    if (camera)
+        camera->Resize(glm::vec2(width, height));
 }

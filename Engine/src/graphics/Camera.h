@@ -17,10 +17,12 @@ namespace Engine {
 	{
 	public:
 
+		Camera();
+		~Camera();
+
 		//transformation values
-		
 		glm::vec3 position = glm::vec3(0, 0, -5);
-		glm::vec3 rotation = glm::vec3(0, 0, 0);
+		glm::vec3 rotation = glm::vec3(0);
 
 		//directions
 		glm::vec3 foreward();
@@ -38,12 +40,25 @@ namespace Engine {
 		float fov = 60;
 
 		//open gl
-		void UpdateUniformVariables(unsigned int shaderProgram, glm::vec2 screenScale);
+		void Enable(glm::vec2 size);
+
+		void Resize(glm::vec2 size);
+		void Render(unsigned int shaderProgram);
+		void UpdateUniformVariables(unsigned int shaderProgram);
 
 	private:
 
+		//progressive rendering
+		glm::vec3 prevPos;
+		glm::vec3 prevRot;
+		glm::vec2 screenScale = glm::vec2(0);
+		unsigned int frameBuffer = 0;
+		unsigned int prevFrame = 0;
+		int frame = 1;
+
+		//rotation data
 		void SetRotationMatrix();
-		glm::mat4 rotationMat;
+		glm::mat4 rotationMat = glm::mat4(1);
 
 	};
 }

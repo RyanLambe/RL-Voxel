@@ -1,28 +1,20 @@
 #version 330 core
 
+#define INF 1e+30
+#define PI 3.14159
+
+//move to uniform
 #define VOXEL_SCALE 1
 #define MAX_VOXELS 1000
 #define MAX_MATERIALS 10
 
 #define RAY_BOUNCES 4
+#define SAMPLE_COUNT 2
 
-#define INF 1e+30
-#define PI 3.14159
 
+//input and output
 in vec2 FragPos;
 out vec4 FragColor;
-
-//camera
-uniform vec3 camPos;
-uniform mat4 camRot;
-
-uniform vec2 screenScale;
-uniform float fov;
-
-//light
-uniform vec3 sunDir;
-
-//world
 
 
 //structs
@@ -39,18 +31,51 @@ struct HitInfo {
 	int materialIndex;
 };
 
-//function definitions
-vec3 random(vec2 pos, int frame);
 
-HitInfo traceRay(Ray ray, int voxelCount, vec4 voxels[MAX_VOXELS]);
-vec3 getRayDirection(vec2 screenPos);
+//camera
+uniform vec3 camPos;
+uniform mat4 camRot;
+
+uniform vec2 screenScale;
+uniform float fov;
+
+//progressive rendering
+uniform bool render;
+uniform int frame;
+uniform sampler2D prevFrame;
+uniform float time;
+
+//light
+uniform vec3 sunDir;
+
+//world
+
+
+
+
+//function declaration
+vec3 SamplePixel(Ray ray, int sampleNum, int voxelCount, vec4 voxels[MAX_VOXELS], vec3 materials[MAX_MATERIALS]);
+
+HitInfo TraceRay(Ray ray, int voxelCount, vec4 voxels[MAX_VOXELS]);
+bool HitSun(vec3 point, int voxelCount, vec4 voxels[MAX_VOXELS]);
+vec3 GetRayDirection(vec2 screenPos);
 
 bool VoxelRayIntersection(vec3 voxelPos, Ray ray, out HitInfo info);
-vec3 getVoxelNormal(vec3 voxelPos, vec3 hitPoint);
+vec3 GetVoxelNormal(vec3 voxelPos, vec3 hitPoint);
+
+vec3 Random(vec2 pos, int sampleNum);
 
 
+//function definitions
 void main()
 {
+	if(!render){
+		vec2 pos = (FragPos + vec2(1)) / 2;
+		FragColor = texture(prevFrame, pos);
+		return;
+	}
+
+	//move to uniform
     //voxels
 	int voxelCount = 10;
 	vec4 voxels[MAX_VOXELS];
@@ -66,50 +91,56 @@ void main()
 	voxels[8] = vec4(4, -1, -1, 2);
 	voxels[9] = vec4(2, -2, -1, 2);
 
-	vec3 materials[3];
+	vec3 materials[MAX_MATERIALS];
 	materials[0] = vec3(1, 0, 0);
 	materials[1] = vec3(0, 1, 0);
 	materials[2] = vec3(0, 0, 1);
 
-
-	//camera
+	
+	//pixel ray
 	Ray ray;
 	ray.origin = camPos;
-	ray.direction = getRayDirection(FragPos);
+	ray.direction = GetRayDirection(FragPos);
 
-	FragColor = vec4(0, 0, 0, 0);
+	vec3 finalColour = vec3(0);
 	
+	for(int i = 0; i < max(SAMPLE_COUNT, 1); i++){
+		finalColour += SamplePixel(ray, i, voxelCount, voxels, materials);
+	}
+
+	finalColour /= max(SAMPLE_COUNT, 1);
+
+	//add prevFrame
+	vec2 pos = (FragPos + vec2(1)) / 2;
+	FragColor = vec4(finalColour, 1);
+	FragColor += texture(prevFrame, pos) * (frame - 1);
+	FragColor /= frame;
+} 
+
+vec3 SamplePixel(Ray ray, int sampleNum, int voxelCount, vec4 voxels[MAX_VOXELS], vec3 materials[MAX_MATERIALS]){
+	
+	//move to uniform
 	float roughness = 0.05;
 	float ambient = 0.4;
-	
-	vec3 nSunDir = normalize(sunDir);
 
-	//raytrace
 	bool hitSomething = true;
+	vec3 finalColour = vec3(0);
 	float energyLoss;
 	
-	for (int i = 0; i < RAY_BOUNCES && hitSomething; i++) {
+	for (int i = 0; i < clamp(RAY_BOUNCES, 2, 16) && hitSomething; i++) {
 		
-		HitInfo hit = traceRay(ray, voxelCount, voxels);
+		//raytrace
+		HitInfo hit = TraceRay(ray, voxelCount, voxels);
 		hitSomething = hit.hit;
-		
-
-		//ray trace to sun
-		Ray toSun;
-		toSun.origin = hit.hitPoint + (hit.surfaceNormal * 0.001);
-		toSun.direction = nSunDir;
-
-		HitInfo shadingInfo = traceRay(toSun, voxelCount, voxels);
-
 
 		//illumination
 		energyLoss = (i + 1) * (i + 1);
-		if (!shadingInfo.hit) {
-			vec3 colour = materials[hit.materialIndex] * max(dot(hit.surfaceNormal, nSunDir), ambient);
-			FragColor += vec4(colour / energyLoss, 1);
+		if (HitSun(hit.hitPoint, voxelCount, voxels)) {
+			vec3 colour = materials[hit.materialIndex] * max(dot(hit.surfaceNormal, sunDir), ambient);
+			finalColour += colour / energyLoss;
 		}
 		else {
-			FragColor += vec4((materials[hit.materialIndex] * ambient) / energyLoss, 1);
+			finalColour += (materials[hit.materialIndex] * ambient) / energyLoss;
 		}
 
 
@@ -117,27 +148,18 @@ void main()
 		if(hit.hit){
 			ray.origin = hit.hitPoint + (hit.surfaceNormal * 0.001);
 
-			vec3 roughNormal = hit.surfaceNormal + random(FragPos, 0) * roughness;
+			vec3 roughNormal = hit.surfaceNormal + Random(FragPos, sampleNum) * roughness;
 			ray.direction = reflect(ray.direction, roughNormal);
 		}
 	}
 
 	//add sky colour
-	FragColor += vec4(vec3(0.2, 0.8, 0.9) / (energyLoss), 1);
-	FragColor.w = 1;
-} 
+	finalColour += vec3(0.2, 0.8, 0.9) / (energyLoss);
 
-vec3 random(vec2 pos, int frame){
-	vec2 k = vec2(23.1406926327792690, 2.6651441426902251);
-
-	float a = fract(sin(dot(pos, k)) * 43758.5453);
-	float b = fract(sin(dot(pos, k)) * 52589.6536);
-	float c = fract(sin(dot(pos, k)) * 45881.3912);
-
-	return vec3(a, b, c);
+	return finalColour;
 }
 
-HitInfo traceRay(Ray ray, int voxelCount, vec4 voxels[MAX_VOXELS]) {
+HitInfo TraceRay(Ray ray, int voxelCount, vec4 voxels[MAX_VOXELS]) {
 	
 	HitInfo closestHit;
 	closestHit.hitDistance = INF;
@@ -145,7 +167,6 @@ HitInfo traceRay(Ray ray, int voxelCount, vec4 voxels[MAX_VOXELS]) {
 	closestHit.materialIndex = -1;
 
 	for (int i = 0; i < voxelCount; i++) {
-
 		HitInfo hit;
 		if (VoxelRayIntersection(voxels[i].xyz, ray, hit)) {
 
@@ -153,15 +174,29 @@ HitInfo traceRay(Ray ray, int voxelCount, vec4 voxels[MAX_VOXELS]) {
 				closestHit = hit;
 				closestHit.materialIndex = int(voxels[i].w);
 			}
-
 		}
-
 	}
-
 	return closestHit;
 }
 
-vec3 getRayDirection(vec2 screenPos) {
+bool HitSun(vec3 point, int voxelCount, vec4 voxels[MAX_VOXELS]){
+
+	//get ray
+	Ray ray;
+	ray.origin = point;
+	ray.direction = sunDir;
+
+	//check for hits
+	for(int i = 0; i < voxelCount; i++) {
+		HitInfo hit;
+		if(VoxelRayIntersection(voxels[i].xyz, ray, hit)){
+			return false;
+		}
+	}
+	return true;
+}
+
+vec3 GetRayDirection(vec2 screenPos) {
 	
 	//adjust for fov
 	vec2 correctedScreenPos = screenPos * tan((fov * PI / 180.0f) / 2);
@@ -171,7 +206,6 @@ vec3 getRayDirection(vec2 screenPos) {
 
 	//rotate ray direction
 	return (camRot * vec4(correctedScreenPos, 1, 1)).xyz;
-	//return normalize((camRot * vec4(correctedScreenPos, 1, 0)).xyz);
 }
 
 bool VoxelRayIntersection(vec3 voxelPos, Ray ray, out HitInfo info) {
@@ -191,13 +225,13 @@ bool VoxelRayIntersection(vec3 voxelPos, Ray ray, out HitInfo info) {
 	info.hit = (t1 >= 0 && t1 <= t2);
 	info.hitDistance = t1;
 	info.hitPoint = ray.origin + ray.direction * t1;
-	info.surfaceNormal = getVoxelNormal(voxelPos, info.hitPoint);
+	info.surfaceNormal = GetVoxelNormal(voxelPos, info.hitPoint);
 	info.materialIndex = -1;
 
 	return info.hit;
 }
 
-vec3 getVoxelNormal(vec3 voxelPos, vec3 hitPoint) {
+vec3 GetVoxelNormal(vec3 voxelPos, vec3 hitPoint) {
 	
 	vec3 voxelNormal = hitPoint - voxelPos;
 	vec3 absVoxelNormal = abs(voxelNormal);
@@ -219,4 +253,22 @@ vec3 getVoxelNormal(vec3 voxelPos, vec3 hitPoint) {
 	if (voxelNormal.z > 0)
 		return vec3(0, 0, 1);
 	return vec3(0, 0, -1);
+}
+
+vec3 Random(vec2 pos, int sampleNum){
+
+	//random function is a modified version of gold noise by dcerisano
+	//https://www.shadertoy.com/view/ltB3zD
+
+	vec2 correctedPos = (pos + 1) / 2;
+	correctedPos *= screenScale;
+	
+	float PHI = 1.61803398874989484820459;
+	float seed = fract(time) + float(sampleNum / 10.0);
+
+	float a = fract(tan(distance(correctedPos*PHI, correctedPos)*(seed+0.1))*correctedPos.x);
+	float b = fract(tan(distance(correctedPos*PHI, correctedPos)*(seed+0.2))*correctedPos.x);
+	float c = fract(tan(distance(correctedPos*PHI, correctedPos)*(seed+0.3))*correctedPos.x);
+
+	return vec3(a, b, c);
 }
