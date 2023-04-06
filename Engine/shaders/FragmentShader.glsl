@@ -9,7 +9,7 @@
 #define MAX_MATERIALS 10
 
 #define RAY_BOUNCES 4
-#define SAMPLE_COUNT 2
+#define SAMPLE_COUNT 4
 
 
 //input and output
@@ -63,6 +63,8 @@ vec3 GetRayDirection(vec2 screenPos);
 bool VoxelRayIntersection(vec3 voxelPos, Ray ray, out HitInfo info);
 vec3 GetVoxelNormal(vec3 voxelPos, vec3 hitPoint);
 
+vec3 CookTorranceSpecular(vec3 toCam, vec3 normal, vec3 toLight, vec3 baseColour, float metallic, float roughness, float specular);
+
 vec3 Random(vec2 pos, int sampleNum);
 
 
@@ -92,9 +94,9 @@ void main()
 	voxels[9] = vec4(2, -2, -1, 2);
 
 	vec3 materials[MAX_MATERIALS];
-	materials[0] = vec3(1, 0, 0);
-	materials[1] = vec3(0, 1, 0);
-	materials[2] = vec3(0, 0, 1);
+	materials[0] = vec3(0.94, 0.2, 0.24);
+	materials[1] = vec3(0.3, 0.9, 0.5);
+	materials[2] = vec3(0.18, 0.52, 0.93);
 
 	
 	//pixel ray
@@ -120,43 +122,37 @@ void main()
 vec3 SamplePixel(Ray ray, int sampleNum, int voxelCount, vec4 voxels[MAX_VOXELS], vec3 materials[MAX_MATERIALS]){
 	
 	//move to uniform
-	float roughness = 0.05;
-	float ambient = 0.4;
+	float roughness = 0.5;
+	float metallic = 0.0;
+	float specular = 0.5;
+	float ambient = 0.1;
 
-	bool hitSomething = true;
-	vec3 finalColour = vec3(0);
-	float energyLoss;
+	vec3 rayColour = vec3(1);
+	vec3 incomingLight = vec3(0);
 	
-	for (int i = 0; i < clamp(RAY_BOUNCES, 2, 16) && hitSomething; i++) {
+	for (int i = 0; i < 2;i++){  ;//clamp(RAY_BOUNCES, 2, 16); i++) {
 		
-		//raytrace
 		HitInfo hit = TraceRay(ray, voxelCount, voxels);
-		hitSomething = hit.hit;
+		if(hit.hit) {
 
-		//illumination
-		energyLoss = (i + 1) * (i + 1);
-		if (HitSun(hit.hitPoint, voxelCount, voxels)) {
-			vec3 colour = materials[hit.materialIndex] * max(dot(hit.surfaceNormal, sunDir), ambient);
-			finalColour += colour / energyLoss;
-		}
-		else {
-			finalColour += (materials[hit.materialIndex] * ambient) / energyLoss;
-		}
-
-
-		//cast new ray
-		if(hit.hit){
 			ray.origin = hit.hitPoint + (hit.surfaceNormal * 0.001);
 
-			vec3 roughNormal = hit.surfaceNormal + Random(FragPos, sampleNum) * roughness;
-			ray.direction = reflect(ray.direction, roughNormal);
+			vec3 randomDir = normalize(Random(FragPos, sampleNum));
+			if(dot(randomDir, hit.surfaceNormal) < 0)
+				randomDir = -randomDir;
+
+			ray.direction = normalize(randomDir);
+
+			incomingLight += vec3(0) * rayColour;
+			rayColour = materials[hit.materialIndex];
+		}
+		else {
+			incomingLight += vec3(1) * rayColour;
+			break;
 		}
 	}
 
-	//add sky colour
-	finalColour += vec3(0.2, 0.8, 0.9) / (energyLoss);
-
-	return finalColour;
+	return incomingLight;
 }
 
 HitInfo TraceRay(Ray ray, int voxelCount, vec4 voxels[MAX_VOXELS]) {
@@ -253,6 +249,46 @@ vec3 GetVoxelNormal(vec3 voxelPos, vec3 hitPoint) {
 	if (voxelNormal.z > 0)
 		return vec3(0, 0, 1);
 	return vec3(0, 0, -1);
+}
+
+
+vec3 CookTorranceSpecular(vec3 toCam, vec3 normal, vec3 toLight, vec3 baseColour, float metallic, float roughness, float specular){
+
+	//initialize variables
+	vec3 halfVec = normalize(toLight + toCam);
+
+	float nDotL = clamp(dot(normal, toLight), 0.0, 1.0); 
+	float nDotC = clamp(dot(normal, toCam), 0.0, 1.0); 
+	float nDotH = clamp(dot(normal, halfVec), 0.0, 1.0); 
+	float cDotH = clamp(dot(toCam, halfVec), 0.0, 1.0);
+
+
+	//normal distribution
+	float alpha = roughness * roughness;
+	float alphaSq = alpha * alpha;
+	float nDotHSq = nDotH * nDotH;
+
+	float D = nDotHSq * (alphaSq - 1.0) + 1;
+	D = alphaSq / (PI * (D * D));
+
+	
+	//fresnel
+	vec3 R0 = vec3(0.16 * (specular * specular));
+	R0 = mix(R0, baseColour, metallic);
+
+	vec3 F = R0 + (1.0 - R0) * pow(1.0 - cDotH, 5);
+	
+
+	//geometry attinuation
+	float k = alpha / 2.0;
+	float Ga = max(nDotL, 0.001) / (nDotL * (1 - k) + k);
+	float Gb = max(nDotC, 0.001) / (nDotC * (1 - k) + k);
+
+	float G = Ga * Gb;
+
+
+	//return
+	return (D * F * G) / (4 * max(nDotL, 0.001) * max(nDotC, 0.001));
 }
 
 vec3 Random(vec2 pos, int sampleNum){
