@@ -1,7 +1,10 @@
+# Update
+Due to school work picking up, this project was abandoned before it was completed. I still intend to come back to it at some point, but for now I have other ideas that I'm more curious about exploring.
+
+
 # RL-Voxel
 
-This will be a Realtime Voxel Rendering Engine using OpenGL. 
-
+This will be a Realtime Raytraced Voxel Rendering Engine using OpenGL. 
 
 ## Goals:
 
